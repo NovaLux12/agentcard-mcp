@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.1.1 — 2026-07-03
+
+Post-verifier fixes from the M3 review pass.
+
+**Fixed (CRITICAL):**
+
+- **loadSource now explicitly rejects stdin-equivalent paths.** The
+  previous version claimed "stdin NOT supported" but only filtered
+  empty input and embedded NUL bytes, falling through to `os.ReadFile`
+  for `-`, `/dev/stdin`, `/dev/zero`, `/proc/self/fd/0`, etc. A
+  single `tools/call` with `arguments.source="/dev/stdin"` would
+  race the MCP SDK's JSON-RPC reader and corrupt the wire protocol
+  (or block indefinitely waiting for EOF). loadSource now:
+  - Rejects `-` explicitly
+  - Rejects `/dev/...` and `/proc/...` prefixes
+  - Uses `url.Parse` for scheme detection (case-insensitive, RFC 3986)
+  - Rejects any non-http(s) scheme (`file://`, `ftp://`, `gopher://`)
+
+**Fixed (MEDIUM):**
+
+- **summarize now distinguishes wrong-type fields from absent ones.**
+  Previously, a `capabilities: "web-search"` (string instead of array)
+  silently produced `Capabilities: []`. Now it returns an error like
+  `card.capabilities: expected array, got string`. This matters because
+  `find_capability` and `list_capabilities` call summarize directly
+  without running the schema validator, so silent zero values would
+  produce misleading "not found" answers.
+- **Protocols sorted deterministically.** Map iteration in Go is
+  randomised; the previous Protocols output varied across calls.
+  Added `sort.Strings(out.Protocols)` so log diffs and snapshots are
+  stable.
+
+**Fixed (LOW):**
+
+- **Defensive copy of Capabilities in find_capability.** The output
+  field used to alias `summary.Capabilities`. Today that's a fresh
+  slice, but the aliasing is a footgun for future refactors.
+
+**Tests:** 13 → 20, with new cases for stdin-equivalent rejection,
+uppercase scheme acceptance, wrong-type-field errors, and protocol
+sort order.
+
 ## 0.1.0 — 2026-07-03
 
 First public release. MCP server that exposes the

@@ -107,9 +107,100 @@ func TestLoadSourceLocalPath(t *testing.T) {
 }
 
 func TestLoadSourceRejectsUnsupportedScheme(t *testing.T) {
-	_, err := loadSource(context.Background(), "file:///etc/passwd")
-	if err == nil {
-		t.Fatalf("expected error on file:// scheme, got nil")
+	cases := []string{
+		"file:///etc/passwd",
+		"ftp://example.com/agent.json",
+		"gopher://example.com",
+	}
+	for _, in := range cases {
+		_, err := loadSource(context.Background(), in)
+		if err == nil {
+			t.Errorf("%s: expected error, got nil", in)
+		}
+	}
+}
+
+func TestLoadSourceRejectsStdinEquivalents(t *testing.T) {
+	// These would race the MCP SDK's reader for the JSON-RPC pipe if
+	// allowed to fall through to os.ReadFile.
+	cases := []string{
+		"-",
+		"/dev/stdin",
+		"/dev/zero",
+		"/proc/self/fd/0",
+		"/proc/1/cmdline",
+	}
+	for _, in := range cases {
+		_, err := loadSource(context.Background(), in)
+		if err == nil {
+			t.Errorf("%s: expected rejection, got nil", in)
+		}
+	}
+}
+
+func TestLoadSourceSchemeCaseInsensitive(t *testing.T) {
+	// RFC 3986 allows uppercase schemes; loadSource should accept them.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+
+	// Replace the scheme with uppercase.
+	upper := "HTTP://" + strings.TrimPrefix(server.URL, "http://")
+	// Use https for an https server, or http for http. The test
+	// server URL is http://, so the uppercase form should also work.
+	body, err := loadSource(context.Background(), upper)
+	if err != nil {
+		t.Fatalf("uppercase scheme rejected: %v", err)
+	}
+	if !strings.Contains(string(body), `"ok"`) {
+		t.Errorf("uppercase scheme fetched wrong body: %q", body)
+	}
+}
+
+func TestSummarizeRejectsWrongTypes(t *testing.T) {
+	// A field that exists but is the wrong type must produce an error
+	// rather than silently returning a zero value.
+	cases := []struct {
+		name string
+		body string
+	}{
+		{"version-as-number", `{"version":1.0,"agent":{"name":"x","handle":"@x@x.com","description":"x"},"owner":{"name":"X"}}`},
+		{"agent-as-string", `{"version":"1.0","agent":"oops"}`},
+		{"capabilities-as-string", `{"version":"1.0","agent":{"name":"x","handle":"@x@x.com","description":"x"},"owner":{"name":"X"},"capabilities":"web-search"}`},
+		{"protocols-as-string", `{"version":"1.0","agent":{"name":"x","handle":"@x@x.com","description":"x"},"owner":{"name":"X"},"protocols":"mcp"}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := summarize([]byte(tc.body)); err == nil {
+				t.Errorf("expected error on %s, got nil", tc.name)
+			}
+		})
+	}
+}
+
+func TestSummarizeProtocolsSorted(t *testing.T) {
+	// Multiple true protocols should be returned in sorted order so
+	// log diffs and snapshots are stable across runs.
+	body := `{
+        "version": "1.0",
+        "agent": {"name":"x","handle":"@x@x.com","description":"x"},
+        "owner": {"name":"X"},
+        "protocols": {"mcp":true,"a2a":true,"http":true,"agent-card":"1.0"}
+    }`
+	s, err := summarize([]byte(body))
+	if err != nil {
+		t.Fatalf("summarize: %v", err)
+	}
+	want := []string{"a2a", "http", "mcp"} // agent-card is a string, not bool
+	got := s.Protocols
+	if len(got) != len(want) {
+		t.Fatalf("Protocols: got %v, want %v", got, want)
+	}
+	for i, w := range want {
+		if got[i] != w {
+			t.Errorf("Protocols[%d]: got %q, want %q", i, got[i], w)
+		}
 	}
 }
 
