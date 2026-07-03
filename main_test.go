@@ -328,3 +328,136 @@ func TestRenderValidationFailAndWarn(t *testing.T) {
 		}
 	}
 }
+
+func TestLintCardOutput_Builds(t *testing.T) {
+	// Build a card that triggers known lint codes: free-mail handle (H003)
+	// and uppercase handle (H002). This exercises the per-code aggregation.
+	body := `{
+        "version": "1.0",
+        "agent": {"name":"X","handle":"@X@gmail.com","description":"x"},
+        "owner": {"name":"X"},
+        "endpoints": {"card": "https://example.com/.well-known/agent.json"}
+    }`
+	warnings := agentvalidate.Lint([]byte(body))
+
+	out := lintCardOutput{
+		Source:      "/tmp/x.json",
+		Warnings:    make([]lintWarning, 0, len(warnings)),
+		Codes:       []string{},
+		CountByCode: map[string]int{},
+	}
+	seen := map[string]bool{}
+	for _, w := range warnings {
+		out.Warnings = append(out.Warnings, lintWarning{Code: w.Code, Path: w.Path, Message: w.Message})
+		out.CountByCode[w.Code]++
+		if !seen[w.Code] {
+			seen[w.Code] = true
+			out.Codes = append(out.Codes, w.Code)
+		}
+	}
+	out.HasWarnings = len(out.Warnings) > 0
+
+	if !out.HasWarnings {
+		t.Fatalf("expected HasWarnings=true, got %v", warnings)
+	}
+	// gmail.com handle fires H003.
+	if out.CountByCode["H003"] == 0 {
+		t.Errorf("expected H003 in count_by_code, got %v", out.CountByCode)
+	}
+	// Codes should contain H003.
+	found := false
+	for _, c := range out.Codes {
+		if c == "H003" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected H003 in codes list, got %v", out.Codes)
+	}
+}
+
+func TestLintCardOutput_Clean(t *testing.T) {
+	// A canonical lowercase handle + endpoints + updated_at should lint
+	// clean (no NO-ENDPOINTS, no H002, no NO-UPDATED-AT).
+	body := `{
+        "version": "1.0",
+        "agent": {"name":"X","handle":"@x@example.com","description":"x"},
+        "owner": {"name":"X"},
+        "endpoints": {"card": "https://example.com/.well-known/agent.json"},
+        "updated_at": "2026-07-01T00:00:00Z"
+    }`
+	warnings := agentvalidate.Lint([]byte(body))
+	if len(warnings) != 0 {
+		t.Fatalf("expected clean lint, got: %v", warnings)
+	}
+
+	out := lintCardOutput{
+		Source:      "/tmp/x.json",
+		Warnings:    []lintWarning{},
+		Codes:       []string{},
+		CountByCode: map[string]int{},
+		HasWarnings: false,
+	}
+	if out.HasWarnings {
+		t.Errorf("expected HasWarnings=false")
+	}
+	if len(out.Warnings) != 0 {
+		t.Errorf("expected empty Warnings")
+	}
+	if len(out.Codes) != 0 {
+		t.Errorf("expected empty Codes")
+	}
+}
+
+func TestRenderLintClean(t *testing.T) {
+	out := lintCardOutput{
+		Source:      "/tmp/x.json",
+		HasWarnings: false,
+	}
+	got := renderLint(out)
+	if !strings.Contains(got, "clean (no warnings)") {
+		t.Errorf("renderLint(clean) missing 'clean (no warnings)' in:\n%s", got)
+	}
+}
+
+func TestRenderLintWithWarnings(t *testing.T) {
+	out := lintCardOutput{
+		Source: "/tmp/x.json",
+		Warnings: []lintWarning{
+			{Code: "H003", Path: "agent.handle", Message: "free-mail"},
+			{Code: "NO-ENDPOINTS", Message: "no endpoints"},
+		},
+		Codes:       []string{"H003", "NO-ENDPOINTS"},
+		CountByCode: map[string]int{"H003": 1, "NO-ENDPOINTS": 1},
+		HasWarnings: true,
+	}
+	got := renderLint(out)
+	for _, want := range []string{
+		"2 warning(s)",
+		"2 distinct code(s)",
+		"H003 agent.handle: free-mail",
+		"NO-ENDPOINTS: no endpoints",
+		"codes: H003, NO-ENDPOINTS",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("renderLint missing %q in:\n%s", want, got)
+		}
+	}
+}
+
+func TestRenderLintWarningWithoutPath(t *testing.T) {
+	// Warnings without a path should render as "<code>: <message>".
+	out := lintCardOutput{
+		Source: "/tmp/x.json",
+		Warnings: []lintWarning{
+			{Code: "JSON", Message: "could not parse"},
+		},
+		Codes:       []string{"JSON"},
+		CountByCode: map[string]int{"JSON": 1},
+		HasWarnings: true,
+	}
+	got := renderLint(out)
+	if !strings.Contains(got, "JSON: could not parse") {
+		t.Errorf("renderLint(warning-no-path) missing 'JSON: could not parse' in:\n%s", got)
+	}
+}
