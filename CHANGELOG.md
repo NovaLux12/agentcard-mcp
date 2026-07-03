@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.0 — 2026-07-03
+
+Add structured lint tool.
+
+**Added:**
+
+- **`lint_card` tool.** Returns soft lint warnings as structured fields
+  (code, path, message separately) plus a deduplicated `codes` list and
+  a `count_by_code` map. Schema validation is **not** run here — use
+  `validate_card` for that. Useful when callers want to filter by code,
+  aggregate across many cards, or render warnings in a UI without
+  re-parsing the human-readable form.
+
+**Tests:** added 5 lint_card tests (clean card, multi-code aggregation,
+renderLint clean case, renderLint with warnings, renderLint without
+path). All pass.
+
 ## 0.1.1 — 2026-07-03
 
 Post-verifier fixes from the M3 review pass.

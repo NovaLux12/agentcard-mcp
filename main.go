@@ -30,7 +30,7 @@ import (
 
 // Version is the agentcard-mcp release tag. Bump in lockstep with
 // CHANGELOG.md and README install snippets.
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 // serverImpl is the MCP server identity advertised during handshake.
 var serverImpl = &mcp.Implementation{
@@ -43,6 +43,7 @@ func main() {
 
 	registerGetCardTool(server)
 	registerValidateCardTool(server)
+	registerLintCardTool(server)
 	registerListCapabilitiesTool(server)
 	registerFindCapabilityTool(server)
 	registerResolveWellKnownTool(server)
@@ -462,6 +463,100 @@ func registerResolveWellKnownTool(server *mcp.Server) {
 				URL string `json:"url"`
 			}{URL: resolved}, nil
 	})
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// lint_card — return structured lint warnings for a card
+// ─────────────────────────────────────────────────────────────────────
+//
+// validate_card returns warnings as concatenated strings; lint_card
+// returns them as structured fields (code, path, message separately)
+// so callers can filter by warning code, count occurrences, or render
+// warnings in a UI without re-parsing the human-readable form.
+//
+// The schema validation half is intentionally not run here — callers
+// that need schema validation should call validate_card, or chain
+// lint_card with a separate schema check. Separating the two keeps
+// each tool's contract small.
+
+type lintCardArgs struct {
+	Source string `json:"source" jsonschema:"URL or local path of the agent.json"`
+}
+
+type lintWarning struct {
+	Code    string `json:"code"`
+	Path    string `json:"path,omitempty"`
+	Message string `json:"message"`
+}
+
+type lintCardOutput struct {
+	Source       string         `json:"source"`
+	Warnings     []lintWarning  `json:"warnings"`
+	Codes        []string       `json:"codes"`
+	CountByCode  map[string]int `json:"count_by_code"`
+	HasWarnings  bool           `json:"has_warnings"`
+}
+
+func registerLintCardTool(server *mcp.Server) {
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "lint_card",
+		Description: "Return soft lint warnings for an agent.json as structured fields (code, path, message separately) plus a count-by-code summary. Schema validation is NOT run here — use validate_card for that. Use this tool when you need to filter warnings by code or aggregate them across many cards.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, args lintCardArgs) (*mcp.CallToolResult, lintCardOutput, error) {
+		data, err := loadSource(ctx, args.Source)
+		if err != nil {
+			return nil, lintCardOutput{}, fmt.Errorf("could not load %s: %w", args.Source, err)
+		}
+
+		raw := agentvalidate.Lint(data)
+
+		out := lintCardOutput{
+			Source:      args.Source,
+			Warnings:    make([]lintWarning, 0, len(raw)),
+			Codes:       []string{},
+			CountByCode: map[string]int{},
+		}
+
+		seenCodes := map[string]bool{}
+		for _, w := range raw {
+			out.Warnings = append(out.Warnings, lintWarning{
+				Code:    w.Code,
+				Path:    w.Path,
+				Message: w.Message,
+			})
+			out.CountByCode[w.Code]++
+			if !seenCodes[w.Code] {
+				seenCodes[w.Code] = true
+				out.Codes = append(out.Codes, w.Code)
+			}
+		}
+		out.HasWarnings = len(out.Warnings) > 0
+
+		text := renderLint(out)
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: text}},
+		}, out, nil
+	})
+}
+
+func renderLint(o lintCardOutput) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "Lint for %s\n", o.Source)
+	if !o.HasWarnings {
+		b.WriteString("  clean (no warnings)\n")
+		return b.String()
+	}
+	fmt.Fprintf(&b, "  %d warning(s), %d distinct code(s)\n", len(o.Warnings), len(o.Codes))
+	for _, w := range o.Warnings {
+		if w.Path != "" {
+			fmt.Fprintf(&b, "    - %s %s: %s\n", w.Code, w.Path, w.Message)
+		} else {
+			fmt.Fprintf(&b, "    - %s: %s\n", w.Code, w.Message)
+		}
+	}
+	if len(o.Codes) > 0 {
+		fmt.Fprintf(&b, "  codes: %s\n", strings.Join(o.Codes, ", "))
+	}
+	return b.String()
 }
 
 // sourceLabel is a tiny helper that returns a friendly label for the

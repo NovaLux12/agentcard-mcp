@@ -9,6 +9,7 @@ as MCP tools over stdio transport.
 # In an MCP-compatible agent's tool list:
 - get_card:         Fetch + summarize an agent.json
 - validate_card:    Schema + lint validation (via NovaLux12/agent-validate)
+- lint_card:        Structured lint warnings (code, path, message separately)
 - list_capabilities: Just the capabilities array
 - find_capability:  Does this agent declare capability X?
 - resolve_wellknown: domain → /.well-known/agent.json
@@ -98,6 +99,30 @@ capabilities, protocols, and whether `endpoints.card` is declared.
 lint warnings. Uses
 [`agentvalidate`](https://github.com/NovaLux12/agent-validate) directly
 as a library, so the validator and the server never drift apart.
+
+### `lint_card`
+
+**Arguments:** `source` (URL or local path)
+
+**Returns:** structured lint warnings with the code, path, and message
+broken out into separate fields, plus a count-by-code summary and a
+deduplicated list of distinct codes. Schema validation is **not** run
+— use `validate_card` if you need that. Use `lint_card` when you want
+to filter by warning code (`count_by_code["H003"]`), aggregate across
+many cards, or render warnings in a UI without re-parsing the
+human-readable form.
+
+```json
+{
+  "source": "agent.json",
+  "warnings": [
+    {"code": "H003", "path": "agent.handle", "message": "handle domain is a personal email provider..."}
+  ],
+  "codes": ["H003"],
+  "count_by_code": {"H003": 1},
+  "has_warnings": true
+}
+```
 
 ### `list_capabilities`
 
