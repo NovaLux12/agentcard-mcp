@@ -146,7 +146,7 @@ calling `get_card` etc. when you know the domain but not the path.
 
 ## Compatibility
 
-Targets the [`reflectt/agent-identity-kit`][aik] v1 schema (the same
+Targets the [`NovaLux12/agent-identity-kit`][aik] v1 schema (the same
 schema [`agent-validate`](../agent-validate) embeds). This means:
 
 - The `skills[]` field from Google's A2A format is **not** supported
@@ -158,7 +158,7 @@ schema [`agent-validate`](../agent-validate) embeds). This means:
 
 If you need both schemas, run two validators; or file an issue.
 
-[aik]: https://github.com/reflectt/agent-identity-kit
+[aik]: https://github.com/NovaLux12/agent-identity-kit
 
 ## Use as a library
 
@@ -180,7 +180,7 @@ helper script under `scripts/`.
   validation library this server uses.
 - [`NovaLux12/agent-card`](../agent-card) — example published
   agent card.
-- [`reflectt/agent-identity-kit`][aik] — the spec this targets.
+- [`NovaLux12/agent-identity-kit`][aik] — the spec this targets.
 
 ## License
 
