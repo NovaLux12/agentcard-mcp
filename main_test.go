@@ -88,6 +88,37 @@ func TestSummarizeMinimalCard(t *testing.T) {
 	}
 }
 
+func TestSummarizeNullOwner(t *testing.T) {
+	// SPEC §3.3: owner may be null or absent for autonomous agents
+	// (v1.1+). A null owner is spec-sanctioned, not a parse error.
+	card := `{
+  "version": "1.1",
+  "agent": {
+    "kind": "autonomous-ai-agent",
+    "name": "Auto",
+    "handle": "@auto@example.com",
+    "description": "Autonomous agent card."
+  },
+  "owner": null,
+  "operator": null,
+  "capabilities": ["web-search"],
+  "scope": {"impersonates_humans": false}
+}`
+	got, err := summarize([]byte(card))
+	if err != nil {
+		t.Fatalf("summarize: %v", err)
+	}
+	if got.Name != "Auto" {
+		t.Errorf("Name: got %q, want Auto", got.Name)
+	}
+	if got.Owner != "" || got.OwnerURL != "" {
+		t.Errorf("owner fields should be empty for null owner, got %q/%q", got.Owner, got.OwnerURL)
+	}
+	if len(got.Capabilities) != 1 || got.Capabilities[0] != "web-search" {
+		t.Errorf("Capabilities: got %v, want [web-search]", got.Capabilities)
+	}
+}
+
 func TestSummarizeInvalidJSON(t *testing.T) {
 	_, err := summarize([]byte(`{ not json`))
 	if err == nil {

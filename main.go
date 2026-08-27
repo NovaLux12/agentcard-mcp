@@ -8,8 +8,8 @@
 //
 // Validation is delegated to NovaLux12/agent-validate (the same
 // library that powers the `agent-validate` CLI), so this server stays
-// schema-accurate against the upstream reflectt/agent-identity-kit
-// spec without duplicating validation logic.
+// schema-accurate against the NovaLux12/agent-identity-kit spec
+// without duplicating validation logic.
 package main
 
 import (
@@ -176,7 +176,7 @@ func summarize(data []byte) (getCardOutput, error) {
 			out.Description = v
 		}
 	}
-	if owner, ok := doc["owner"]; ok {
+	if owner, ok := doc["owner"]; ok && owner != nil {
 		m, isMap := owner.(map[string]any)
 		if !isMap {
 			return out, fmt.Errorf("card.owner: expected object, got %T", owner)
@@ -490,11 +490,11 @@ type lintWarning struct {
 }
 
 type lintCardOutput struct {
-	Source       string         `json:"source"`
-	Warnings     []lintWarning  `json:"warnings"`
-	Codes        []string       `json:"codes"`
-	CountByCode  map[string]int `json:"count_by_code"`
-	HasWarnings  bool           `json:"has_warnings"`
+	Source      string         `json:"source"`
+	Warnings    []lintWarning  `json:"warnings"`
+	Codes       []string       `json:"codes"`
+	CountByCode map[string]int `json:"count_by_code"`
+	HasWarnings bool           `json:"has_warnings"`
 }
 
 func registerLintCardTool(server *mcp.Server) {

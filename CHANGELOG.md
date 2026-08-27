@@ -1,5 +1,34 @@
 # Changelog
 
+All notable changes to this project are documented here.
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## Unreleased
+
+**Fixed:**
+
+- **`get_card` / `list_capabilities` / `find_capability` no longer error
+  on cards with `owner: null`.** The spec (agent-identity-kit §3.3, v1.1+)
+  sanctions a null `owner` for autonomous agents. Previously, a single
+  `tools/call` against a valid autonomous-agent card returned
+  `card.owner: expected object, got <nil>` and the card could not be
+  summarised at all. Null `owner` is now skipped (owner fields empty in
+  the summary), matching the schema's `type: ["object", "null"]`.
+  Regression test added (`TestSummarizeNullOwner`).
+
+**Changed:**
+
+- Dependency bumps: `agent-validate` v0.1.1 → v0.2.0 (adds the
+  `agentvalidate.Report` public API and `--json` output mode),
+  `modelcontextprotocol/go-sdk` v1.6.1 → v1.7.0.
+- README Compatibility section now documents that agent-validate v0.2.0
+  embeds the v1.0 schema only, so v1.1+ fields (`agent.kind`, `scope`,
+  `vouched_by`, `offers`/`seeks`, `owner: null`) are reported as schema
+  errors by `validate_card` until agent-validate ships a newer schema.
+- Header comment references the canonical `NovaLux12/agent-identity-kit`
+  spec instead of the silent upstream.
+
 ## 0.2.0 — 2026-07-03
 
 Add structured lint tool.

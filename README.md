@@ -146,12 +146,20 @@ calling `get_card` etc. when you know the domain but not the path.
 
 ## Compatibility
 
-Targets the [`NovaLux12/agent-identity-kit`][aik] v1 schema (the same
-schema [`agent-validate`](../agent-validate) embeds). This means:
+Targets the [`NovaLux12/agent-identity-kit`][aik] spec (the same schema
+[`agent-validate`](../agent-validate) embeds). This means:
 
+- **Known limitation:** `agent-validate` v0.2.0 embeds the v1.0
+  schema only. Cards that use v1.1+ fields (`agent.kind`, `scope`,
+  `vouched_by`, `offers`/`seeks`, `owner: null`) are valid per the
+  current spec (v1.3) but `validate_card` will report them as schema
+  errors until agent-validate ships a newer schema. The parse-only
+  tools (`get_card`, `list_capabilities`, `find_capability`,
+  `lint_card`) handle v1.1+ cards, including the spec-sanctioned
+  `owner: null` form for autonomous agents.
 - The `skills[]` field from Google's A2A format is **not** supported
-  — v1 doesn't have one. Capabilities are the v1-native discovery
-  primitive.
+  — the agent.json spec doesn't have one. Capabilities are the
+  native discovery primitive.
 - If you point the server at an A2A-format card, `get_card` and
   `list_capabilities` will still produce a partial parse, but
   `validate_card` will correctly report it as schema-invalid.
