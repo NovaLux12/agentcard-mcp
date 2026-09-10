@@ -3,7 +3,7 @@ module github.com/NovaLux12/agentcard-mcp
 go 1.26
 
 require (
-	github.com/NovaLux12/agent-validate v0.2.0
+	github.com/NovaLux12/agent-validate v0.3.0
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 )
 

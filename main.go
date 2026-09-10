@@ -279,7 +279,7 @@ type validateCardOutput struct {
 func registerValidateCardTool(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "validate_card",
-		Description: "Validate an agent.json against the reflectt/agent-identity-kit v1 JSON Schema and run soft lint checks (handle format, capability tags, endpoint URLs, etc.). Returns valid=true if schema passes; warnings are always advisory.",
+		Description: "Validate an agent.json against the NovaLux12/agent-identity-kit JSON Schemas (v1.0-v1.3, version auto-detected) and run soft lint checks (handle format, capability tags, endpoint URLs, etc.). Returns valid=true if schema passes; warnings are always advisory.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, args validateCardArgs) (*mcp.CallToolResult, validateCardOutput, error) {
 		data, err := loadSource(ctx, args.Source)
 		if err != nil {
