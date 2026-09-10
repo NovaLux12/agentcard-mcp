@@ -1,5 +1,5 @@
-github.com/NovaLux12/agent-validate v0.2.0 h1:DbB0NKR55pgpS+E/mpykw3XCUElWvXQPfLQJUqboUXo=
-github.com/NovaLux12/agent-validate v0.2.0/go.mod h1:7nzeCYrJyMeXUQzcZt4bdXblMAK2uTb5eC1f88w8Q3w=
+github.com/NovaLux12/agent-validate v0.3.0 h1:tBCzLp2zppPklxGuNgDARNfk/oBPCp4DwkV7rFLOtJc=
+github.com/NovaLux12/agent-validate v0.3.0/go.mod h1:7nzeCYrJyMeXUQzcZt4bdXblMAK2uTb5eC1f88w8Q3w=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/golang-jwt/jwt/v5 v5.3.1 h1:kYf81DTWFe7t+1VvL7eS+jKFVWaUnK9cB1qbwn63YCY=
 github.com/golang-jwt/jwt/v5 v5.3.1/go.mod h1:fxCRLWMO43lRc8nhHWY6LGqRcf+1gQWArsqaEUEa5bE=
