@@ -4,6 +4,34 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.2 — 2026-10-21
+
+Fix the install instructions and add the release automation they were missing.
+
+**Fixed:**
+
+- **The "Direct download" install command pointed at a URL that could never
+  resolve.** It named `agentcard-mcp_linux_amd64.tar.gz`, but no release in
+  this repo's history has published a `.tar.gz` — v0.2.0 published raw
+  binaries and `SHA256SUMS`. The command is corrected to download the raw
+  binary by the name that is actually published, and to mark it executable.
+- **Releases shipped with no assets at all.** This repo had no release
+  workflow — only `test.yml` — so v0.2.0's binaries were attached by hand and
+  every release since (v0.2.1) published `assets_count: 0`. That is why even
+  the corrected filename 404'd against `releases/latest/`: the latest release
+  had nothing to hand out.
+
+**Added:**
+
+- **`.github/workflows/release.yml`.** Builds the six platform binaries,
+  checksums them, and attaches them to the tag release. The asset names match
+  the ones v0.2.0 already published, so the naming stays continuous with the
+  existing release.
+- **The released binary reports its own tag.** `Version` moves from `const` to
+  `var` so the release build can inject the version via `-X`; a const cannot
+  be overridden at link time. A released binary now agrees with the
+  `go install` path instead of contradicting it.
+
 ## 0.2.1 — 2026-08-27
 
 **Fixed:**

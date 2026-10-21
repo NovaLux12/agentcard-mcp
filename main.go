@@ -30,7 +30,7 @@ import (
 
 // Version is the agentcard-mcp release tag. Bump in lockstep with
 // CHANGELOG.md and README install snippets.
-var Version = "0.2.1"
+var Version = "0.2.2"
 
 // serverImpl is the MCP server identity advertised during handshake.
 var serverImpl = &mcp.Implementation{
