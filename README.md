@@ -47,8 +47,9 @@ go install github.com/NovaLux12/agentcard-mcp@latest
 
 ```sh
 # Linux x86_64 example
-curl -L https://github.com/NovaLux12/agentcard-mcp/releases/latest/download/agentcard-mcp_linux_amd64.tar.gz \
-  | tar xz -C /usr/local/bin agentcard-mcp
+curl -L https://github.com/NovaLux12/agentcard-mcp/releases/latest/download/agentcard-mcp_linux_amd64 \
+  -o /usr/local/bin/agentcard-mcp
+chmod +x /usr/local/bin/agentcard-mcp
 ```
 
 **Build from source:**
