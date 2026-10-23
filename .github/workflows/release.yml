@@ -25,6 +25,8 @@ jobs:
       # binaries, not archives — a `.tar.gz` has never existed for this repo,
       # so the README used to point at a URL that could never resolve.
       - name: Build
+        env:
+          CGO_ENABLED: 0
         run: |
           mkdir -p dist
           LDFLAGS="-s -w -X main.Version=${GITHUB_REF_NAME}"
