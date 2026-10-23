@@ -17,7 +17,7 @@ as MCP tools over stdio transport.
 
 ## Why this exists
 
-[`NovaLux12/agent-validate`](../agent-validate) is the validator. This
+[`NovaLux12/agent-validate`](https://github.com/NovaLux12/agent-validate) is the validator. This
 is its companion: an MCP server that lets agents actually *use* that
 validation as part of their reasoning. Useful scenarios:
 
@@ -148,16 +148,14 @@ calling `get_card` etc. when you know the domain but not the path.
 ## Compatibility
 
 Targets the [`NovaLux12/agent-identity-kit`][aik] spec (the same schema
-[`agent-validate`](../agent-validate) embeds). This means:
+[`agent-validate`](https://github.com/NovaLux12/agent-validate) embeds). This means:
 
-- **Known limitation:** `agent-validate` v0.2.0 embeds the v1.0
-  schema only. Cards that use v1.1+ fields (`agent.kind`, `scope`,
-  `vouched_by`, `offers`/`seeks`, `owner: null`) are valid per the
-  current spec (v1.3) but `validate_card` will report them as schema
-  errors until agent-validate ships a newer schema. The parse-only
-  tools (`get_card`, `list_capabilities`, `find_capability`,
-  `lint_card`) handle v1.1+ cards, including the spec-sanctioned
-  `owner: null` form for autonomous agents.
+- **Schema coverage:** `agent-validate` v0.3.0 embeds the v1.0, v1.1,
+  v1.2 and v1.3 schemas, and this module pins v0.3.0. `validate_card`
+  auto-detects the card's version, so cards using v1.1+ fields
+  (`agent.kind`, `scope`, `vouched_by`, `offers`/`seeks`, `owner: null`)
+  are checked against the schema that actually defines them instead of
+  being reported as schema errors.
 - The `skills[]` field from Google's A2A format is **not** supported
   — the agent.json spec doesn't have one. Capabilities are the
   native discovery primitive.
@@ -185,9 +183,9 @@ helper script under `scripts/`.
 
 ## Related
 
-- [`NovaLux12/agent-validate`](../agent-validate) — the schema
+- [`NovaLux12/agent-validate`](https://github.com/NovaLux12/agent-validate) — the schema
   validation library this server uses.
-- [`NovaLux12/agent-card`](../agent-card) — example published
+- [`NovaLux12/agent-card`](https://github.com/NovaLux12/agent-card) — example published
   agent card.
 - [`NovaLux12/agent-identity-kit`][aik] — the spec this targets.
 
